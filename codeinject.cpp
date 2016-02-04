@@ -16,6 +16,7 @@ bool shouldRenderBlock()
 
 bool minecraftH4x0r() {
 
+	// Address of _ZTV5Block (plus 8)
 	uintptr_t* const vtable_address = slideAddress(0x9965E8);
 	// ptr to _ZTV5Block
 	uintptr_t** const vtable = (uintptr_t** const)vtable_address;
