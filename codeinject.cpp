@@ -1,46 +1,47 @@
 #include "stdafx.h"
 #include <Windows.h>
+#include <iostream>
 
 // base address; TODO: Find this dynamically
-static uintptr_t* const BaseAddress = (uintptr_t*)0x7ff6b24c0000;
+static uintptr_t* const BaseAddress = (uintptr_t*)0x7ff6fa800000;
 
 
-uintptr_t* slideAddress(uintptr_t offset) {
+uintptr_t* SlideAddress(uintptr_t offset) {
 	return (uintptr_t*)((uintptr_t)BaseAddress + offset);
 }
 
-bool shouldRenderBlock()
+
+uint32_t changeBedrockColor()
+{
+	return 0x00FF00FF; // purple
+}
+
+bool bedrockBlocksChests()
 {
 	return false;
 }
 
+bool removeBedrockCollision()
+{
+	return false;
+}
+
+
+
 bool minecraftH4x0r() {
 
-	// Address of _ZTV5Block (plus 8)
-	uintptr_t* const vtable_address = slideAddress(0x9965E8);
-	// ptr to _ZTV5Block
+	uintptr_t* const vtable_address = (uintptr_t* const) SlideAddress(0x997FE8);
+	// ptr to _ZTV12BedrockBlock
 	uintptr_t** const vtable = (uintptr_t** const)vtable_address;
 
-	DWORD procId;
-	HWND hWnd = FindWindow(0, L"Minecraft.Win10.DX11.exe");
-	if (hWnd == NULL)
+	DWORD procId = GetCurrentProcessId();
+	if (procId == NULL)
 	{
 		return false;
 	}
 
-	GetWindowThreadProcessId(hWnd, &procId);
 	HANDLE process = OpenProcess(PROCESS_ALL_ACCESS | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION, FALSE, procId);
-	
-	// Attempt to allow SE_DEBUG privileges to this process
-	HANDLE hToken;
-	TOKEN_PRIVILEGES _privileges;
-	OpenProcessToken(process, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
-	LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &_privileges.Privileges[0].Luid);
 
-	_privileges.PrivilegeCount = 1;
-	_privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-	AdjustTokenPrivileges(hToken, FALSE, &_privileges, 0, (PTOKEN_PRIVILEGES)NULL, 0);
 
 	if (GetLastError() != ERROR_SUCCESS)
 	{
@@ -52,19 +53,20 @@ bool minecraftH4x0r() {
 	DWORD protection = PAGE_READWRITE;
 	DWORD oldProtection;
 
-	// Index of Block::shouldRenderFace in the vtable
-	int index = 6;
-
 	// Attempt to set read/write protections
-	if (::VirtualProtectEx(process, &vtable[index], sizeof(DWORD_PTR), protection, &oldProtection) == 0) {
+	if (::VirtualProtectEx(process, vtable, sizeof(DWORD_PTR) * 60, protection, &oldProtection) == 0) {
 		CloseHandle(process);
 		return false;
 	}
-	else // Replace the vtable pointer for Block::shouldRenderFace
-		vtable[index] = (uintptr_t*) &shouldRenderBlock;
+	else {
+		// setup vtable hooks
+		vtable[5] = (uintptr_t*)&bedrockBlocksChests;
+		vtable[14] = (uintptr_t*)&removeBedrockCollision;
+		vtable[59] = (uintptr_t*)&changeBedrockColor;
+	}
 
 	// Revert back to previous permissions
-	if (::VirtualProtectEx(process, &vtable[index], sizeof(DWORD_PTR), oldProtection, &oldProtection) == 0) {
+	if (::VirtualProtectEx(process, vtable, sizeof(DWORD_PTR) * 60, oldProtection, &oldProtection) == 0) {
 		CloseHandle(process);
 		return false;
 	}
@@ -78,7 +80,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		if (!minecraftH4x0r())
+		if(!minecraftH4x0r())
 		{
 			; // TODO: Popup that we failed
 		}
