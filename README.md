@@ -1,11 +1,11 @@
 # Minecraft: Windows 10 Edition Test Mod
-A so far failed attempt to mod Minecraft: Windows 10 Edition.
-It is intended to make most Blocks stop rendering, but so far it does nothing.
+First ever working mod for Minecraft: Windows 10 Edition!
+It makes cobblestone and bedrock:  
+- Stop blocking chests from being opened underneath  
+- Walkthrough  
+- Purple :D  
 
 ##Credits:
-@byteandahalf
-
-@jocopa3
-
-
-@C0deh4cker
+@byteandahalf - programming, research, vtable hooking  
+@jocopa3 - WinAPI programming, research  
+@C0deh4cker - moral support  
