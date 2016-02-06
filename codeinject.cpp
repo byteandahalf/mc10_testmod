@@ -5,6 +5,8 @@
 // base address; TODO: Find this dynamically
 static uintptr_t* const BaseAddress = (uintptr_t*)0x7ff6fa800000;
 
+static void** mBlocks;
+
 
 uintptr_t* SlideAddress(uintptr_t offset) {
 	return (uintptr_t*)((uintptr_t)BaseAddress + offset);
@@ -30,9 +32,9 @@ bool removeBedrockCollision()
 
 bool minecraftH4x0r() {
 
-	uintptr_t* const vtable_address = (uintptr_t* const) SlideAddress(0x997FE8);
+	mBlocks = (void**) SlideAddress(0xA75750);
 	// ptr to _ZTV12BedrockBlock
-	uintptr_t** const vtable = (uintptr_t** const)vtable_address;
+	uintptr_t** const vtable = (uintptr_t** const) (*((void***) mBlocks[7]));
 
 	DWORD procId = GetCurrentProcessId();
 	if (procId == NULL)
