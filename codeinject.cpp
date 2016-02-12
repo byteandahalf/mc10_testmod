@@ -17,17 +17,17 @@ struct Block
 };
 Block** Block::mBlocks;
 
-uint32_t changeBedrockColor()
+uint32_t changeBlockColor()
 {
 	return 0x00FF00FF; // purple
 }
 
-bool bedrockBlocksChests()
+bool blockObstructsChests()
 {
 	return false;
 }
 
-bool removeBedrockCollision()
+bool removeBlockCollision()
 {
 	return false;
 }
@@ -44,9 +44,9 @@ bool minecraftH4x0r()
 			continue;
 
 		uintptr_t** vtable = Block::mBlocks[i]->vtable + 1;
-		vtable[5] = (uintptr_t*)&bedrockBlocksChests;
-		vtable[14] = (uintptr_t*)&removeBedrockCollision;
-		vtable[59] = (uintptr_t*)&changeBedrockColor;
+		vtable[5] = (uintptr_t*)&blockObstructsChests;
+		vtable[14] = (uintptr_t*)&removeBlockCollision;
+		vtable[59] = (uintptr_t*)&changeBlockColor;
 	}
 
 	return true;
