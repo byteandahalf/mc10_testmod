@@ -1,17 +1,15 @@
-#include "stdafx.h"
 #include <Windows.h>
-#include <iostream>
+#include <stdint.h>
+#include <Psapi.h>
 
-// base address; TODO: Find this dynamically
-static uintptr_t* const BaseAddress = (uintptr_t*)0x7ff6fa800000;
-
-static void** mBlocks;
-
-
-uintptr_t* SlideAddress(uintptr_t offset) {
-	return (uintptr_t*)((uintptr_t)BaseAddress + offset);
+// base address
+static uintptr_t BaseAddress;
+HANDLE process;
+uintptr_t SlideAddress(uintptr_t offset) {
+	return BaseAddress + offset;
 }
 
+uintptr_t** VTBlock;
 
 uint32_t changeBedrockColor()
 {
@@ -30,63 +28,67 @@ bool removeBedrockCollision()
 
 
 
-bool minecraftH4x0r() {
+bool minecraftH4x0r()
+{
+	VTBlock = (uintptr_t**)SlideAddress(0x99AFE8);
 
-	mBlocks = (void**) SlideAddress(0xA75750);
-	// ptr to _ZTV12BedrockBlock
-	uintptr_t** const vtable = (uintptr_t** const) (*((void***) mBlocks[7]));
+	VTBlock[5] = (uintptr_t*)&bedrockBlocksChests;
+	VTBlock[14] = (uintptr_t*)&removeBedrockCollision;
+	VTBlock[59] = (uintptr_t*)&changeBedrockColor;
 
-	DWORD procId = GetCurrentProcessId();
-	if (procId == NULL)
-	{
-		return false;
-	}
-
-	HANDLE process = OpenProcess(PROCESS_ALL_ACCESS | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION, FALSE, procId);
-
-
-	if (GetLastError() != ERROR_SUCCESS)
-	{
-		CloseHandle(process);
-		return false;
-	}
-
-	// Store old and new protections
-	DWORD protection = PAGE_READWRITE;
-	DWORD oldProtection;
-
-	// Attempt to set read/write protections
-	if (::VirtualProtectEx(process, vtable, sizeof(DWORD_PTR) * 60, protection, &oldProtection) == 0) {
-		CloseHandle(process);
-		return false;
-	}
-	else {
-		// setup vtable hooks
-		vtable[5] = (uintptr_t*)&bedrockBlocksChests;
-		vtable[14] = (uintptr_t*)&removeBedrockCollision;
-		vtable[59] = (uintptr_t*)&changeBedrockColor;
-	}
-
-	// Revert back to previous permissions
-	if (::VirtualProtectEx(process, vtable, sizeof(DWORD_PTR) * 60, oldProtection, &oldProtection) == 0) {
-		CloseHandle(process);
-		return false;
-	}
-
-	CloseHandle(process);
 	return true;
+}
+
+// find base ptr dynamically
+DWORD_PTR GetProcessBaseAddress(DWORD processID)
+{
+	DWORD_PTR baseAddress = 0;
+	HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processID);
+	HMODULE* moduleArray;
+	LPBYTE moduleArrayBytes;
+	DWORD bytesRequired;
+
+	if(processHandle)
+	{
+		if(EnumProcessModules(processHandle, NULL, 0, &bytesRequired))
+		{
+			if(bytesRequired)
+			{
+				moduleArrayBytes = (LPBYTE)LocalAlloc(LPTR, bytesRequired);
+
+				if(moduleArrayBytes)
+				{
+					unsigned int moduleCount;
+
+					moduleCount = bytesRequired / sizeof(HMODULE);
+					moduleArray = (HMODULE*)moduleArrayBytes;
+
+					if(EnumProcessModules(processHandle, moduleArray, bytesRequired, &bytesRequired))
+					{
+						baseAddress = (DWORD_PTR)moduleArray[0];
+					}
+
+					LocalFree(moduleArrayBytes);
+				}
+			}
+		}
+
+		CloseHandle(processHandle);
+	}
+
+	return baseAddress;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
+	DWORD procId = GetCurrentProcessId();
+	process = OpenProcess(PROCESS_ALL_ACCESS | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION, FALSE, procId);
+	BaseAddress = (uintptr_t)GetProcessBaseAddress(procId);
+
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		if(!minecraftH4x0r())
-		{
-			; // TODO: Popup that we failed
-		}
-		break;
+		return minecraftH4x0r();
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
