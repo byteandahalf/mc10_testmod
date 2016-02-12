@@ -1,6 +1,6 @@
 # Minecraft: Windows 10 Edition Test Mod
 First ever working mod for Minecraft: Windows 10 Edition!
-It makes cobblestone and bedrock:  
+It makes all blocks:  
 - Stop blocking chests from being opened underneath  
 - Walkthrough  
 - Purple :D  
