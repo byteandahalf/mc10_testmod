@@ -9,7 +9,13 @@ uintptr_t SlideAddress(uintptr_t offset) {
 	return BaseAddress + offset;
 }
 
-uintptr_t** VTBlock;
+struct Block
+{
+	uintptr_t** vtable;
+
+	static Block** mBlocks;
+};
+Block** Block::mBlocks;
 
 uint32_t changeBedrockColor()
 {
@@ -30,11 +36,18 @@ bool removeBedrockCollision()
 
 bool minecraftH4x0r()
 {
-	VTBlock = (uintptr_t**)SlideAddress(0x99AFE8);
+	Block::mBlocks = (Block**)SlideAddress(0xA75750);
 
-	VTBlock[5] = (uintptr_t*)&bedrockBlocksChests;
-	VTBlock[14] = (uintptr_t*)&removeBedrockCollision;
-	VTBlock[59] = (uintptr_t*)&changeBedrockColor;
+	for (int i = 0; i < 256; i++)
+	{
+		if (!Block::mBlocks[i])
+			continue;
+
+		uintptr_t** vtable = Block::mBlocks[i]->vtable + 1;
+		vtable[5] = (uintptr_t*)&bedrockBlocksChests;
+		vtable[14] = (uintptr_t*)&removeBedrockCollision;
+		vtable[59] = (uintptr_t*)&changeBedrockColor;
+	}
 
 	return true;
 }
