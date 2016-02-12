@@ -5,6 +5,9 @@ It makes all blocks:
 - Walkthrough  
 - Purple :D  
 
+Release and how to install:  
+https://github.com/byteandahalf/mc10_testmod/releases
+
 ##Credits:
 @byteandahalf - programming, research, vtable hooking  
 @jocopa3 - WinAPI programming, research  
